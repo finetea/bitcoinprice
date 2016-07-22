@@ -1,10 +1,12 @@
-#!/bin/python
+#!/usr/bin/python
 
 import datetime
-from datetime import date
+#from datetime import date
 import httplib
 import json
 import pymysql.cursors
+
+use_proxy = 1
 
 def getHost(url):
 	if url.startswith('http://') or url.startswith('https://'):
@@ -37,10 +39,19 @@ def getOrders(url):
 	#print hostname
 	#print path
 
-	conn = httplib.HTTPSConnection(hostname)
+        if use_proxy:
+            conn = httplib.HTTPSConnection('168.219.61.252',8080)
+        else:
+            conn = httplib.HTTPSConnection(hostname)
 	if not conn:
 		return ""
-	conn.request("GET", path)
+
+        if use_proxy:
+            conn.set_tunnel(hostname, 443)
+            conn.request("GET", url)
+        else:
+            conn.request("GET", path)
+
 	result = conn.getresponse()
 	response = result.read()
 	conn.close()
@@ -80,7 +91,7 @@ def getOrdersBithumb():
 	return orders
 
 def insertOrders(market, now, orders):
-	'''	
+	'''
 	CREATE TABLE `prices` (
 		`market` VARCHAR(10) NOT NULL,
 		`date` DATETIME NOT NULL,
@@ -96,7 +107,7 @@ def insertOrders(market, now, orders):
 	'''
 	conn = pymysql.connect(host='localhost',
                              user='btcuser',
-                             password='',
+                             password='btcpassword',
                              db='btc',
                              charset='utf8mb4',
                              cursorclass=pymysql.cursors.DictCursor)
@@ -113,7 +124,7 @@ def insertOrders(market, now, orders):
 	finally:
 		conn.close()
 
-#main 
+#main
 
 now = datetime.datetime.now()
 #print now.date()
